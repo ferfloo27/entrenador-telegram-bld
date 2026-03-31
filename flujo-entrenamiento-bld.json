@@ -1,0 +1,498 @@
+{
+  "name": "flujo-entrenamiento-bld",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": false
+        }
+      },
+      "id": "aa3c3c51-6d01-4bf3-9a76-d4f62c6c17ca",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1920,
+        -32
+      ],
+      "webhookId": "61730d9b-df78-4b96-9190-1a417e87f060",
+      "credentials": {
+        "telegramApi": {
+          "id": "nEXHm100uO0keqpR",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.from.id }}",
+        "text": "={{ $('Code in JavaScript2').item.json.mensaje_telegram }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -832,
+        64
+      ],
+      "id": "128d20c8-8725-4caf-a50d-5749c4bf6d0e",
+      "name": "Send a text message1",
+      "webhookId": "54c62ebd-0510-4b97-9cdc-fae8277babd2",
+      "credentials": {
+        "telegramApi": {
+          "id": "nEXHm100uO0keqpR",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0daa7aad-23cf-4f19-b438-ef7f5f4248c3",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "/empezar",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1648,
+        -16
+      ],
+      "id": "42b1e4ad-280d-414f-b8ac-aa5ed146ad0f",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/13sr6aBol2tY42TQrWwnQWTcchHVnDbf2/edit?gid=1734805473#gid=1734805473",
+          "mode": "url"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -1472,
+        880
+      ],
+      "id": "2e9816c7-d9c9-4aaf-9636-c26edfbf2a7b",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "LgbU4hOO3APP0i5e",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -1184,
+        832
+      ],
+      "id": "a92dfb51-ac3c-4087-b8ed-0e8207deb8bb",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "const result = [];\nconst items = $input.all();\nif (items.length === 0) return result;\n\n// 1. Verificamos si n8n usó la fila de letras (A, B, C) como nombres de las columnas\nconst primerFila = items[0].json;\nconst claves = Object.keys(primerFila);\nconst usaCabeceras = claves.includes(\"A\") && claves.includes(\"B\") && claves.includes(\"C\");\n\nif (usaCabeceras) {\n  // CASO A: Las letras A, B, C... son los nombres de las columnas\n  for (const item of items) {\n    const fila = item.json;\n    \n    // Buscamos la letra de la fila (A-Z)\n    let letraFila = fila[\"\"] || fila[\"Column 1\"] || fila[\"0\"];\n    if (!letraFila || letraFila.length !== 1) {\n       for (const val of Object.values(fila)) {\n         if (typeof val === 'string' && val.trim().length === 1 && val.match(/^[A-Z]$/i)) {\n           letraFila = val; break;\n         }\n       }\n    }\n\n    if (!letraFila || typeof letraFila !== 'string' || letraFila.trim().length !== 1) continue;\n    letraFila = letraFila.trim().toUpperCase();\n\n    // Recorremos las columnas para armar los pares\n    for (const [columna, palabra] of Object.entries(fila)) {\n      if (columna.length === 1 && columna.match(/^[A-Z]$/i)) {\n         if (palabra && typeof palabra === 'string' && palabra.trim() !== \"\") {\n            result.push({\n              json: {\n                par: letraFila + columna.toUpperCase(),\n                palabra: palabra.trim()\n              }\n            });\n         }\n      }\n    }\n  }\n} else {\n  // CASO B: Las letras A, B, C... están mezcladas dentro de las celdas como valores\n  const matriz = items.map(item => Object.values(item.json));\n  \n  let indiceCabecera = -1;\n  for (let i = 0; i < matriz.length; i++) {\n    if (matriz[i].includes(\"A\") && matriz[i].includes(\"B\") && matriz[i].includes(\"C\")) {\n      indiceCabecera = i; break;\n    }\n  }\n\n  if (indiceCabecera !== -1) {\n    const letrasColumnas = matriz[indiceCabecera];\n    \n    for (let i = indiceCabecera + 1; i < matriz.length; i++) {\n      const fila = matriz[i];\n      let letraFila = fila.find(val => typeof val === 'string' && val.trim().length === 1 && val.match(/^[A-Z]$/i));\n      \n      if (letraFila) {\n        letraFila = letraFila.trim().toUpperCase();\n        for (let j = 0; j < fila.length; j++) {\n          const letraColumna = letrasColumnas[j];\n          const palabra = fila[j];\n          \n          if (letraColumna && typeof letraColumna === 'string' && letraColumna.trim().length === 1 && letraColumna.match(/^[A-Z]$/i)) {\n            if (palabra && typeof palabra === 'string' && palabra.trim() !== \"\" && palabra.trim().toUpperCase() !== letraFila) {\n              result.push({\n                json: {\n                  par: letraFila + letraColumna.trim().toUpperCase(),\n                  palabra: palabra.trim()\n                }\n              });\n            }\n          }\n        }\n      }\n    }\n  }\n}\n\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -976,
+        832
+      ],
+      "id": "94b78b7a-2e3e-42b7-ab0e-7b7e6b25abfe",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "useCustomSchema": true,
+        "tableId": "diccionario",
+        "dataToSend": "autoMapInputData"
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -752,
+        816
+      ],
+      "id": "64d05507-4c44-4da6-b37f-710cadccaf4d",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yLhcbgVQxg2OLtSU",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "rpc/obtener_pares_azar",
+        "limit": 15
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1392,
+        -208
+      ],
+      "id": "82fbd26a-4be0-4062-9c2e-82de227a6a0e",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yLhcbgVQxg2OLtSU",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Juntamos los 15 pares en una sola lista\nconst listaPares = $input.all().map(item => item.json);\n\n// Obtenemos tu Chat ID del primer nodo (¡Cambia el nombre si el tuyo es diferente!)\nconst chatId = $('Telegram Trigger').first().json.message.chat.id;\n\nreturn [{\n  json: {\n    chat_id: chatId,\n    estado: \"entrenando\",\n    pares: listaPares,          // Guardamos la lista completa\n    pregunta_actual: 0,         // Empezamos en el índice 0 (pregunta 1)\n    aciertos: 0,\n    primer_par: listaPares[0].par // Extraemos la primera letra para preguntártela ahora mismo\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1184,
+        -208
+      ],
+      "id": "fcb18884-ef0f-40ae-b2e3-cb0a851a445e",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "useCustomSchema": true,
+        "tableId": "sesion_bot",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "chat_id",
+              "fieldValue": "={{ $json.chat_id }}"
+            },
+            {
+              "fieldId": "estado",
+              "fieldValue": "={{ $json.estado }}"
+            },
+            {
+              "fieldId": "pares",
+              "fieldValue": "={{ $json.pares }}"
+            },
+            {
+              "fieldId": "pregunta_actual",
+              "fieldValue": "={{ $json.pregunta_actual }}"
+            },
+            {
+              "fieldId": "aciertos",
+              "fieldValue": "={{ $json.aciertos }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -976,
+        -208
+      ],
+      "id": "dceef391-da0b-4bea-b014-9aef6fc974b8",
+      "name": "Create a row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yLhcbgVQxg2OLtSU",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "sesion_bot",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "keyValue": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+            },
+            {
+              "keyName": "estado",
+              "keyValue": "entrenando"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1440,
+        80
+      ],
+      "id": "ae040771-a285-4fd9-a988-9e21a33a17c8",
+      "name": "Get a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yLhcbgVQxg2OLtSU",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Obtenemos lo que escribiste en Telegram\nconst mensajeUsuario = $('Telegram Trigger').first().json.message.text.trim().toLowerCase();\n\n// 2. Obtenemos los datos de tu sesión de la base de datos\nconst sesion = $input.first().json;\n\n// 3. ESCUDO: Si no hay sesión o ya está inactiva\nif (!sesion || !sesion.pares || sesion.estado !== \"entrenando\") {\n  return [{ \n    json: { \n      error: true, \n      mensaje_telegram: \"No tienes un entrenamiento activo en este momento. 😅\\n\\nEscribe /empezar para iniciar una nueva ronda.\" \n    } \n  }];\n}\n\nconst pares = sesion.pares;\nlet indice = sesion.pregunta_actual;\nlet aciertos = sesion.aciertos;\n// Inicializamos el arreglo de errores (si no existe en la BD, creamos uno vacío)\nlet errores = sesion.errores || []; \n\n// 4. Revisamos cuál era la palabra correcta\nconst parActual = pares[indice];\nconst palabraCorrecta = parActual.palabra.trim().toLowerCase();\n\n// 5. Comparamos tu respuesta\nlet esCorrecto = (mensajeUsuario === palabraCorrecta);\n\nif (esCorrecto) {\n  aciertos++; \n} else {\n  // Si falla, guardamos el PAR en el arreglo de errores\n  errores.push(parActual.par);\n}\n\n// 6. Preparamos el mensaje\nlet textoRespuesta = esCorrecto\n  ? `✅ ¡Correcto! Era **${parActual.palabra}**.\\n\\n`\n  : `❌ ¡Fallaste! La palabra para **${parActual.par}** era **${parActual.palabra}**.\\n\\n`;\n\n// 7. Avanzamos\nindice++; \nlet estado = sesion.estado;\n\nif (indice < pares.length) {\n  textoRespuesta += `🧠 **Pregunta ${indice + 1}/${pares.length}:**\\n¿Qué palabra es: **${pares[indice].par}**?`;\n} else {\n  estado = \"inactivo\";\n  textoRespuesta += `🎉 **¡Entrenamiento finalizado!**\\nAcertaste ${aciertos} de ${pares.length}. ¡Sigue practicando tu BLD!\\n\\nEscribe /empezar para jugar de nuevo.`;\n}\n\n// 8. ENTREGAMOS TODOS LOS DATOS (¡Incluyendo los errores y el ID único de la sesión!)\nreturn [{\n  json: {\n    error: false,\n    id_sesion: sesion.id, // <--- ESTO ES VITAL PARA EL SIGUIENTE NODO\n    chat_id: sesion.chat_id,\n    estado: estado,\n    pregunta_actual: indice,\n    aciertos: aciertos,\n    errores: errores, // <--- AQUÍ EXPORTAMOS LOS ERRORES\n    mensaje_telegram: textoRespuesta\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1232,
+        80
+      ],
+      "id": "33d2a830-1b15-4a40-a19b-e980985050a1",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "sesion_bot",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id_sesion }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "pregunta_actual",
+              "fieldValue": "={{ $json.pregunta_actual }}"
+            },
+            {
+              "fieldId": "aciertos",
+              "fieldValue": "={{ $json.aciertos }}"
+            },
+            {
+              "fieldId": "estado",
+              "fieldValue": "={{ $json.estado }}"
+            },
+            {
+              "fieldId": "errores",
+              "fieldValue": "={{ $json.errores }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1024,
+        80
+      ],
+      "id": "aa23c10b-2307-491d-917b-9af450202259",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yLhcbgVQxg2OLtSU",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=¡Nuevo entrenamiento iniciado! 🚀  🧠 **Pregunta 1/15:** ¿Qué palabra es: **{{ $('Code in JavaScript1').item.json.primer_par }}**?",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -768,
+        -208
+      ],
+      "id": "834f6153-7e26-4b60-b142-96c5019a3ac6",
+      "name": "Send a text message2",
+      "webhookId": "57c598e8-b0c1-43cb-9d58-02b4d24a1543",
+      "credentials": {
+        "telegramApi": {
+          "id": "nEXHm100uO0keqpR",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Create a row1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "b98a62ab-2c67-4f25-8ed6-92d95f0503ac",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "27b6f3e0a912bfe7d60f63c591a6a8bf58cf024f0994c7c776708571103ca406"
+  },
+  "id": "45PsHZObWUTaUvWs",
+  "tags": []
+}

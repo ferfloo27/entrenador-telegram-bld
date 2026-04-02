@@ -35,8 +35,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -768,
-        304
+        -480,
+        464
       ],
       "id": "128d20c8-8725-4caf-a50d-5749c4bf6d0e",
       "name": "Send a text message1",
@@ -209,8 +209,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -960,
-        304
+        -720,
+        496
       ],
       "id": "aa23c10b-2307-491d-917b-9af450202259",
       "name": "Update a row",
@@ -485,6 +485,62 @@
           "name": "Telegram account"
         }
       }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "700ee3f6-faca-4026-a27c-2bedade707a8",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -992,
+        352
+      ],
+      "id": "753d5d28-137d-444d-80ae-7a9e04625562",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "No tienes entrenamiento activo",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -656,
+        272
+      ],
+      "id": "5c4cf797-1eb8-4c1c-8d30-f6a23322262c",
+      "name": "Send a text message4",
+      "webhookId": "d64bde9e-c0d9-4ad5-acc1-a464e880865b",
+      "credentials": {
+        "telegramApi": {
+          "id": "nEXHm100uO0keqpR",
+          "name": "Telegram account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -537,7 +593,7 @@
       "main": [
         [
           {
-            "node": "Update a row",
+            "node": "If1",
             "type": "main",
             "index": 0
           }
@@ -631,6 +687,24 @@
           }
         ]
       ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -641,7 +715,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "versionId": "01e6cc0b-3901-4e9b-8ab4-a471bfe270a1",
+  "versionId": "715750db-a342-493d-acbe-5540ab1538d6",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "27b6f3e0a912bfe7d60f63c591a6a8bf58cf024f0994c7c776708571103ca406"

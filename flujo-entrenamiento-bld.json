@@ -15,8 +15,8 @@
       "type": "n8n-nodes-base.telegramTrigger",
       "typeVersion": 1,
       "position": [
-        -1920,
-        -32
+        -2272,
+        -16
       ],
       "webhookId": "61730d9b-df78-4b96-9190-1a417e87f060",
       "credentials": {
@@ -35,8 +35,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -832,
-        64
+        -768,
+        304
       ],
       "id": "128d20c8-8725-4caf-a50d-5749c4bf6d0e",
       "name": "Send a text message1",
@@ -45,112 +45,6 @@
         "telegramApi": {
           "id": "nEXHm100uO0keqpR",
           "name": "Telegram account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 3
-          },
-          "conditions": [
-            {
-              "id": "0daa7aad-23cf-4f19-b438-ef7f5f4248c3",
-              "leftValue": "={{ $json.message.text }}",
-              "rightValue": "/empezar",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.3,
-      "position": [
-        -1648,
-        -16
-      ],
-      "id": "42b1e4ad-280d-414f-b8ac-aa5ed146ad0f",
-      "name": "If"
-    },
-    {
-      "parameters": {
-        "operation": "download",
-        "fileId": {
-          "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/13sr6aBol2tY42TQrWwnQWTcchHVnDbf2/edit?gid=1734805473#gid=1734805473",
-          "mode": "url"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.googleDrive",
-      "typeVersion": 3,
-      "position": [
-        -1472,
-        880
-      ],
-      "id": "2e9816c7-d9c9-4aaf-9636-c26edfbf2a7b",
-      "name": "Download file",
-      "credentials": {
-        "googleDriveOAuth2Api": {
-          "id": "LgbU4hOO3APP0i5e",
-          "name": "Google Drive OAuth2 API"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "xlsx",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.extractFromFile",
-      "typeVersion": 1.1,
-      "position": [
-        -1184,
-        832
-      ],
-      "id": "a92dfb51-ac3c-4087-b8ed-0e8207deb8bb",
-      "name": "Extract from File"
-    },
-    {
-      "parameters": {
-        "jsCode": "const result = [];\nconst items = $input.all();\nif (items.length === 0) return result;\n\n// 1. Verificamos si n8n usó la fila de letras (A, B, C) como nombres de las columnas\nconst primerFila = items[0].json;\nconst claves = Object.keys(primerFila);\nconst usaCabeceras = claves.includes(\"A\") && claves.includes(\"B\") && claves.includes(\"C\");\n\nif (usaCabeceras) {\n  // CASO A: Las letras A, B, C... son los nombres de las columnas\n  for (const item of items) {\n    const fila = item.json;\n    \n    // Buscamos la letra de la fila (A-Z)\n    let letraFila = fila[\"\"] || fila[\"Column 1\"] || fila[\"0\"];\n    if (!letraFila || letraFila.length !== 1) {\n       for (const val of Object.values(fila)) {\n         if (typeof val === 'string' && val.trim().length === 1 && val.match(/^[A-Z]$/i)) {\n           letraFila = val; break;\n         }\n       }\n    }\n\n    if (!letraFila || typeof letraFila !== 'string' || letraFila.trim().length !== 1) continue;\n    letraFila = letraFila.trim().toUpperCase();\n\n    // Recorremos las columnas para armar los pares\n    for (const [columna, palabra] of Object.entries(fila)) {\n      if (columna.length === 1 && columna.match(/^[A-Z]$/i)) {\n         if (palabra && typeof palabra === 'string' && palabra.trim() !== \"\") {\n            result.push({\n              json: {\n                par: letraFila + columna.toUpperCase(),\n                palabra: palabra.trim()\n              }\n            });\n         }\n      }\n    }\n  }\n} else {\n  // CASO B: Las letras A, B, C... están mezcladas dentro de las celdas como valores\n  const matriz = items.map(item => Object.values(item.json));\n  \n  let indiceCabecera = -1;\n  for (let i = 0; i < matriz.length; i++) {\n    if (matriz[i].includes(\"A\") && matriz[i].includes(\"B\") && matriz[i].includes(\"C\")) {\n      indiceCabecera = i; break;\n    }\n  }\n\n  if (indiceCabecera !== -1) {\n    const letrasColumnas = matriz[indiceCabecera];\n    \n    for (let i = indiceCabecera + 1; i < matriz.length; i++) {\n      const fila = matriz[i];\n      let letraFila = fila.find(val => typeof val === 'string' && val.trim().length === 1 && val.match(/^[A-Z]$/i));\n      \n      if (letraFila) {\n        letraFila = letraFila.trim().toUpperCase();\n        for (let j = 0; j < fila.length; j++) {\n          const letraColumna = letrasColumnas[j];\n          const palabra = fila[j];\n          \n          if (letraColumna && typeof letraColumna === 'string' && letraColumna.trim().length === 1 && letraColumna.match(/^[A-Z]$/i)) {\n            if (palabra && typeof palabra === 'string' && palabra.trim() !== \"\" && palabra.trim().toUpperCase() !== letraFila) {\n              result.push({\n                json: {\n                  par: letraFila + letraColumna.trim().toUpperCase(),\n                  palabra: palabra.trim()\n                }\n              });\n            }\n          }\n        }\n      }\n    }\n  }\n}\n\nreturn result;"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -976,
-        832
-      ],
-      "id": "94b78b7a-2e3e-42b7-ab0e-7b7e6b25abfe",
-      "name": "Code in JavaScript"
-    },
-    {
-      "parameters": {
-        "useCustomSchema": true,
-        "tableId": "diccionario",
-        "dataToSend": "autoMapInputData"
-      },
-      "type": "n8n-nodes-base.supabase",
-      "typeVersion": 1,
-      "position": [
-        -752,
-        816
-      ],
-      "id": "64d05507-4c44-4da6-b37f-710cadccaf4d",
-      "name": "Create a row",
-      "credentials": {
-        "supabaseApi": {
-          "id": "yLhcbgVQxg2OLtSU",
-          "name": "Supabase account"
         }
       }
     },
@@ -252,11 +146,12 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -1440,
-        80
+        -1424,
+        304
       ],
       "id": "ae040771-a285-4fd9-a988-9e21a33a17c8",
       "name": "Get a row",
+      "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
           "id": "yLhcbgVQxg2OLtSU",
@@ -266,13 +161,13 @@
     },
     {
       "parameters": {
-        "jsCode": "// 1. Obtenemos lo que escribiste en Telegram\nconst mensajeUsuario = $('Telegram Trigger').first().json.message.text.trim().toLowerCase();\n\n// 2. Obtenemos los datos de tu sesión de la base de datos\nconst sesion = $input.first().json;\n\n// 3. ESCUDO: Si no hay sesión o ya está inactiva\nif (!sesion || !sesion.pares || sesion.estado !== \"entrenando\") {\n  return [{ \n    json: { \n      error: true, \n      mensaje_telegram: \"No tienes un entrenamiento activo en este momento. 😅\\n\\nEscribe /empezar para iniciar una nueva ronda.\" \n    } \n  }];\n}\n\n// ----------------------------------------------------\n// 🌟 NUEVO: DETECCIÓN DE CANCELACIÓN\n// ----------------------------------------------------\nif (mensajeUsuario === \"/cancelar\") {\n  return [{\n    json: {\n      error: false,\n      id_sesion: sesion.id, \n      chat_id: sesion.chat_id,\n      estado: \"inactivo\", // <-- ¡Magia! Cerramos la sesión\n      pregunta_actual: sesion.pregunta_actual,\n      aciertos: sesion.aciertos,\n      errores: sesion.errores || [], \n      mensaje_telegram: \"🛑 **Entrenamiento cancelado.**\\n\\nNo te preocupes, el progreso hasta aquí quedó guardado. Escribe /empezar cuando estés listo para una nueva ronda.\"\n    }\n  }];\n}\n// ----------------------------------------------------\n\n// 4. Si no cancelaste, evaluamos tu respuesta\nconst pares = sesion.pares;\nlet indice = sesion.pregunta_actual;\nlet aciertos = sesion.aciertos;\nlet errores = sesion.errores || []; \n\nconst parActual = pares[indice];\nconst palabraCorrecta = parActual.palabra.trim().toLowerCase();\n\nlet esCorrecto = (mensajeUsuario === palabraCorrecta);\n\nif (esCorrecto) {\n  aciertos++; \n} else {\n  errores.push(parActual.par);\n}\n\n// 5. Preparamos el mensaje\nlet textoRespuesta = esCorrecto\n  ? `✅ ¡Correcto! Era **${parActual.palabra}**.\\n\\n`\n  : `❌ ¡Fallaste! La palabra para **${parActual.par}** era **${parActual.palabra}**.\\n\\n`;\n\n// 6. Avanzamos\nindice++; \nlet estado = sesion.estado;\n\nif (indice < pares.length) {\n  textoRespuesta += `🧠 **Pregunta ${indice + 1}/${pares.length}:**\\n¿Qué palabra es: **${pares[indice].par}**?`;\n} else {\n  estado = \"inactivo\";\n  textoRespuesta += `🎉 **¡Entrenamiento finalizado!**\\nAcertaste ${aciertos} de ${pares.length}. ¡Sigue practicando tu BLD!\\n\\nEscribe /empezar para jugar de nuevo.`;\n}\n\n// 7. Entregamos los datos al nodo de Supabase\nreturn [{\n  json: {\n    error: false,\n    id_sesion: sesion.id, \n    chat_id: sesion.chat_id,\n    estado: estado,\n    pregunta_actual: indice,\n    aciertos: aciertos,\n    errores: errores, \n    mensaje_telegram: textoRespuesta\n  }\n}];"
+        "jsCode": "const mensajeUsuario = $('Telegram Trigger').first().json.message.text.trim().toLowerCase();\nconst entrada = $input.first();\nconst sesion = entrada ? entrada.json : null;\n\n// ÚNICO ESCUDO NECESARIO: Escribió algo que no es un comando, pero no hay sesión activa.\nif (!sesion || !sesion.pares || sesion.estado !== \"entrenando\") {\n  return [{ \n    json: { \n      error: true, \n      mensaje_telegram: \"No tienes un entrenamiento activo. 😅\\n\\nEscribe /empezar para jugar.\" \n    } \n  }];\n}\n\n// EVALUACIÓN DIRECTA Y LIMPIA\nconst pares = sesion.pares;\nlet indice = sesion.pregunta_actual;\nlet aciertos = sesion.aciertos;\nlet errores = sesion.errores || []; \n\nconst parActual = pares[indice];\nconst palabraCorrecta = parActual.palabra.trim().toLowerCase();\n\nlet esCorrecto = (mensajeUsuario === palabraCorrecta);\n\nif (esCorrecto) {\n  aciertos++; \n} else {\n  errores.push(parActual.par);\n}\n\nlet textoRespuesta = esCorrecto\n  ? `✅ ¡Correcto! Era **${parActual.palabra}**.\\n\\n`\n  : `❌ ¡Fallaste! La palabra para **${parActual.par}** era **${parActual.palabra}**.\\n\\n`;\n\nindice++; \nlet estado = sesion.estado;\n\nif (indice < pares.length) {\n  textoRespuesta += `🧠 **Pregunta ${indice + 1}/${pares.length}:**\\n¿Qué palabra es: **${pares[indice].par}**?`;\n} else {\n  estado = \"finalizado\";\n  textoRespuesta += `🎉 **¡Entrenamiento finalizado!**\\nAcertaste ${aciertos} de ${pares.length}. ¡Sigue practicando!\\n\\nEscribe /empezar para jugar de nuevo.`;\n}\n\nreturn [{\n  json: {\n    error: false,\n    id_sesion: sesion.id, \n    chat_id: sesion.chat_id,\n    estado: estado,\n    pregunta_actual: indice,\n    aciertos: aciertos,\n    errores: errores, \n    mensaje_telegram: textoRespuesta\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1232,
-        80
+        -1216,
+        304
       ],
       "id": "33d2a830-1b15-4a40-a19b-e980985050a1",
       "name": "Code in JavaScript2"
@@ -314,8 +209,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -1024,
-        80
+        -960,
+        304
       ],
       "id": "aa23c10b-2307-491d-917b-9af450202259",
       "name": "Update a row",
@@ -347,6 +242,249 @@
           "name": "Telegram account"
         }
       }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/empezar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "51cce8a4-528f-4f8e-8c3f-0ed47e899812"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "5466924d-5196-4206-b261-c3541006f7b7",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/cancelar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "92b224fc-5622-4ba6-992b-ce27e5fcb93f",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/estadisticas",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -1936,
+        -64
+      ],
+      "id": "f8da9e60-0f84-4029-827e-454aede4775e",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "sesion_bot",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+            },
+            {
+              "keyName": "estado",
+              "condition": "eq",
+              "keyValue": "entrenando"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "estado",
+              "fieldValue": "cancelado"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -848,
+        -32
+      ],
+      "id": "6c894447-bd6b-4138-91af-99ad501353c6",
+      "name": "Update a row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yLhcbgVQxg2OLtSU",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "🛑 Entrenamiento cancelado. El progreso se ha guardado.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -672,
+        -32
+      ],
+      "id": "f6c20c36-1bc5-4eb8-bd59-e6c171033afb",
+      "name": "Send a text message",
+      "webhookId": "456e468d-1e6f-4769-89b8-cb3b76f5d20d",
+      "credentials": {
+        "telegramApi": {
+          "id": "nEXHm100uO0keqpR",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5178b867-b558-4421-9014-9f7d5f690bf7",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1184,
+        0
+      ],
+      "id": "4cc97c77-4088-40c8-879d-65707ac995f8",
+      "name": "If",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "sesion_bot",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "keyValue": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+            },
+            {
+              "keyName": "estado",
+              "keyValue": "entrenando"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1424,
+        16
+      ],
+      "id": "16d41cc7-4cf9-4a6d-ac39-19ff089038a5",
+      "name": "Get a row1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "yLhcbgVQxg2OLtSU",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "No hay ningún entrenamiento activo para cancelar. 🤷‍♂️ Escribe /empezar cuando quieras jugar.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -816,
+        128
+      ],
+      "id": "c5c0b7a5-3430-4334-beeb-74f88cc27c26",
+      "name": "Send a text message3",
+      "webhookId": "456e468d-1e6f-4769-89b8-cb3b76f5d20d",
+      "credentials": {
+        "telegramApi": {
+          "id": "nEXHm100uO0keqpR",
+          "name": "Telegram account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -355,58 +493,7 @@
       "main": [
         [
           {
-            "node": "If",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "If": {
-      "main": [
-        [
-          {
-            "node": "Get many rows",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Get a row",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Download file": {
-      "main": [
-        [
-          {
-            "node": "Extract from File",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Extract from File": {
-      "main": [
-        [
-          {
-            "node": "Code in JavaScript",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Code in JavaScript": {
-      "main": [
-        [
-          {
-            "node": "Create a row",
+            "node": "Switch",
             "type": "main",
             "index": 0
           }
@@ -478,9 +565,75 @@
           }
         ]
       ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a row1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [
+          {
+            "node": "Get a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Update a row1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
@@ -488,7 +641,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "versionId": "3019cbcc-e245-4fb7-b300-909fdca8d228",
+  "versionId": "01e6cc0b-3901-4e9b-8ab4-a471bfe270a1",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "27b6f3e0a912bfe7d60f63c591a6a8bf58cf024f0994c7c776708571103ca406"

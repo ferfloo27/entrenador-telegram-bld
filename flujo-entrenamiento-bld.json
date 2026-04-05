@@ -35,8 +35,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -480,
-        464
+        -624,
+        640
       ],
       "id": "128d20c8-8725-4caf-a50d-5749c4bf6d0e",
       "name": "Send a text message1",
@@ -146,8 +146,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -1424,
-        304
+        -1568,
+        480
       ],
       "id": "ae040771-a285-4fd9-a988-9e21a33a17c8",
       "name": "Get a row",
@@ -166,8 +166,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1216,
-        304
+        -1360,
+        480
       ],
       "id": "33d2a830-1b15-4a40-a19b-e980985050a1",
       "name": "Code in JavaScript2"
@@ -209,8 +209,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -720,
-        496
+        -864,
+        672
       ],
       "id": "aa23c10b-2307-491d-917b-9af450202259",
       "name": "Update a row",
@@ -387,8 +387,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -832,
-        -48
+        -912,
+        112
       ],
       "id": "6c894447-bd6b-4138-91af-99ad501353c6",
       "name": "Update a row1",
@@ -408,8 +408,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -656,
-        -48
+        -736,
+        112
       ],
       "id": "f6c20c36-1bc5-4eb8-bd59-e6c171033afb",
       "name": "Send a text message",
@@ -449,8 +449,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -1168,
-        -16
+        -1248,
+        144
       ],
       "id": "4cc97c77-4088-40c8-879d-65707ac995f8",
       "name": "If",
@@ -476,8 +476,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -1408,
-        0
+        -1488,
+        160
       ],
       "id": "16d41cc7-4cf9-4a6d-ac39-19ff089038a5",
       "name": "Get a row1",
@@ -498,8 +498,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -800,
-        112
+        -880,
+        272
       ],
       "id": "c5c0b7a5-3430-4334-beeb-74f88cc27c26",
       "name": "Send a text message3",
@@ -539,8 +539,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -992,
-        352
+        -1136,
+        528
       ],
       "id": "753d5d28-137d-444d-80ae-7a9e04625562",
       "name": "If1"
@@ -554,8 +554,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -656,
-        272
+        -800,
+        448
       ],
       "id": "5c4cf797-1eb8-4c1c-8d30-f6a23322262c",
       "name": "Send a text message4",
@@ -701,6 +701,74 @@
         }
       },
       "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "sesion_bot",
+        "limit": 1000,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1536,
+        -48
+      ],
+      "id": "8264a01b-9c70-43b2-b8d4-a160bfac4115",
+      "name": "Get many rows1",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "yLhcbgVQxg2OLtSU",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Obtenemos todas las partidas que trajo Supabase\nconst historial = $input.all();\n\n// 2. Escudo: Si no hay historial\nif (historial.length === 0 || !historial[0].json.id) {\n  return [{ \n    json: { \n      mensaje_telegram: \"📊 Aún no tienes estadísticas. ¡Escribe /empezar para jugar tu primera partida!\" \n    } \n  }];\n}\n\n// 3. Variables para nuestras matemáticas\nlet partidasCompletadas = 0;\nlet partidasIncompletas = 0;\nlet aciertosTotales = 0;\nlet preguntasTotales = 0;\nlet conteoErrores = {}; // Aquí guardaremos cuántas veces falló cada par\n\n// 4. Recorremos cada partida del historial\nhistorial.forEach(item => {\n  const sesion = item.json;\n  \n  if (sesion.estado === 'finalizado') {\n    partidasCompletadas++;\n    aciertosTotales += (sesion.aciertos || 0);\n    preguntasTotales += (sesion.pares ? sesion.pares.length : 15);\n    \n    // Sumamos los errores al contador\n    if (sesion.errores && Array.isArray(sesion.errores)) {\n      sesion.errores.forEach(par => {\n        conteoErrores[par] = (conteoErrores[par] || 0) + 1;\n      });\n    }\n  } else if (sesion.estado === 'cancelado' || sesion.estado === 'abandonado') {\n    partidasIncompletas++;\n  }\n});\n\n// 5. Escudo 2: Si tiene partidas pero ninguna finalizada\nif (partidasCompletadas === 0) {\n  return [{ \n    json: { \n      mensaje_telegram: \"📊 Tienes partidas iniciadas, pero ninguna completada al 100%.\\n\\n¡Termina una ronda de 15 letras para ver tu porcentaje de acierto!\" \n    } \n  }];\n}\n\n// 6. Calculamos el porcentaje\nlet porcentaje = ((aciertosTotales / preguntasTotales) * 100).toFixed(1);\n\n// 7. Magia: Ordenamos los errores de mayor a menor para sacar el Top 3\nlet topErrores = Object.keys(conteoErrores)\n  .map(par => ({ par: par, cantidad: conteoErrores[par] }))\n  .sort((a, b) => b.cantidad - a.cantidad)\n  .slice(0, 3); // Solo tomamos los 3 primeros\n\n// 8. Formateamos el texto del Top 3\nlet textoErrores = topErrores.length > 0\n  ? topErrores.map(e => `• **${e.par}** (${e.cantidad} veces)`).join('\\n')\n  : \"¡Ninguno! Tienes una memoria perfecta. 🧠✨\";\n\n// 9. Construimos el mensaje final para Telegram\nlet mensaje = `📊 **TUS ESTADÍSTICAS BLD** 📊\\n\\n`;\nmensaje += `🎮 **Partidas completadas:** ${partidasCompletadas}\\n`;\nmensaje += `🎯 **Precisión global:** ${aciertosTotales}/${preguntasTotales} (${porcentaje}%)\\n`;\nif (partidasIncompletas > 0) {\n  mensaje += `🛑 **Partidas canceladas/abandonadas:** ${partidasIncompletas}\\n`;\n}\nmensaje += `\\n⚠️ **Tus pares más difíciles (Top 3):**\\n${textoErrores}\\n\\n`;\nmensaje += `Sigue así. ¡Escribe /empezar para otra ronda!`;\n\n// 10. Enviamos el mensaje al siguiente nodo\nreturn [{ json: { mensaje_telegram: mensaje } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1328,
+        -48
+      ],
+      "id": "deeb62c9-95d6-452e-af4d-b7946714ad0b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.mensaje_telegram }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1120,
+        -48
+      ],
+      "id": "3ff1fa73-3b29-44eb-ab58-49a71ce922e8",
+      "name": "Send a text message6",
+      "webhookId": "5dca9714-36a3-4e88-92fc-0f7406a1a5e6",
+      "credentials": {
+        "telegramApi": {
+          "id": "nEXHm100uO0keqpR",
+          "name": "Telegram account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -798,7 +866,13 @@
             "index": 0
           }
         ],
-        [],
+        [
+          {
+            "node": "Get many rows1",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Update a row2",
@@ -912,6 +986,28 @@
           }
         ]
       ]
+    },
+    "Get many rows1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send a text message6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -922,7 +1018,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "versionId": "1991a889-d3e8-4622-b063-3c04a8b31b42",
+  "versionId": "c5f768ee-6405-4839-8753-3864a6e4493d",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "27b6f3e0a912bfe7d60f63c591a6a8bf58cf024f0994c7c776708571103ca406"

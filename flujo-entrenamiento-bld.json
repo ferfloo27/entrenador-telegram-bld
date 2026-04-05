@@ -57,8 +57,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -1392,
-        -208
+        -1280,
+        -352
       ],
       "id": "82fbd26a-4be0-4062-9c2e-82de227a6a0e",
       "name": "Get many rows",
@@ -76,8 +76,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1184,
-        -208
+        -1072,
+        -352
       ],
       "id": "fcb18884-ef0f-40ae-b2e3-cb0a851a445e",
       "name": "Code in JavaScript1"
@@ -114,8 +114,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -976,
-        -208
+        -864,
+        -352
       ],
       "id": "dceef391-da0b-4bea-b014-9aef6fc974b8",
       "name": "Create a row1",
@@ -225,13 +225,15 @@
       "parameters": {
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
         "text": "=¡Nuevo entrenamiento iniciado! 🚀  🧠 **Pregunta 1/15:** ¿Qué palabra es: **{{ $('Code in JavaScript1').item.json.primer_par }}**?",
-        "additionalFields": {}
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
       },
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -768,
-        -208
+        -656,
+        -352
       ],
       "id": "834f6153-7e26-4b60-b142-96c5019a3ac6",
       "name": "Send a text message2",
@@ -314,6 +316,29 @@
                 ],
                 "combinator": "and"
               }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "dc991469-af28-4f60-b4d5-d83526fff149",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/reiniciar",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
             }
           ]
         },
@@ -362,8 +387,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -848,
-        -32
+        -832,
+        -48
       ],
       "id": "6c894447-bd6b-4138-91af-99ad501353c6",
       "name": "Update a row1",
@@ -383,8 +408,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -672,
-        -32
+        -656,
+        -48
       ],
       "id": "f6c20c36-1bc5-4eb8-bd59-e6c171033afb",
       "name": "Send a text message",
@@ -424,8 +449,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        -1184,
-        0
+        -1168,
+        -16
       ],
       "id": "4cc97c77-4088-40c8-879d-65707ac995f8",
       "name": "If",
@@ -451,8 +476,8 @@
       "type": "n8n-nodes-base.supabase",
       "typeVersion": 1,
       "position": [
-        -1424,
-        16
+        -1408,
+        0
       ],
       "id": "16d41cc7-4cf9-4a6d-ac39-19ff089038a5",
       "name": "Get a row1",
@@ -473,8 +498,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        -816,
-        128
+        -800,
+        112
       ],
       "id": "c5c0b7a5-3430-4334-beeb-74f88cc27c26",
       "name": "Send a text message3",
@@ -541,6 +566,141 @@
           "name": "Telegram account"
         }
       }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "sesion_bot",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "keyValue": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+            },
+            {
+              "keyName": "estado",
+              "keyValue": "entrenando"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1712,
+        -400
+      ],
+      "id": "38d84e16-f80b-4cf4-913b-8bcd68a0a8ad",
+      "name": "Get a row2",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "yLhcbgVQxg2OLtSU",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a1bf895d-8000-41ba-a4ef-eef5de0ddf8a",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1520,
+        -432
+      ],
+      "id": "b2c340c4-9d5a-499b-bb98-8fa0cae4a4e6",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "=⚠️ Tienes un entrenamiento activo. ¿Estás seguro de que quieres abandonarlo y empezar uno nuevo? \\n\\nPara confirmar, escribe /reiniciar.",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -1280,
+        -528
+      ],
+      "id": "279ef8d6-6951-4707-8a50-bf14298efb5a",
+      "name": "Send a text message5",
+      "webhookId": "57c598e8-b0c1-43cb-9d58-02b4d24a1543",
+      "credentials": {
+        "telegramApi": {
+          "id": "nEXHm100uO0keqpR",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "sesion_bot",
+        "matchType": "allFilters",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+            },
+            {
+              "keyName": "estado",
+              "condition": "eq",
+              "keyValue": "entrenando"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "estado",
+              "fieldValue": "reiniciado"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1568,
+        -224
+      ],
+      "id": "ccb59bbb-38ff-471a-845a-cb85f2245e42",
+      "name": "Update a row2",
+      "credentials": {
+        "supabaseApi": {
+          "id": "yLhcbgVQxg2OLtSU",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueRegularOutput"
     }
   ],
   "pinData": {},
@@ -626,7 +786,7 @@
       "main": [
         [
           {
-            "node": "Get many rows",
+            "node": "Get a row2",
             "type": "main",
             "index": 0
           }
@@ -639,6 +799,13 @@
           }
         ],
         [],
+        [
+          {
+            "node": "Update a row2",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Get a row",
@@ -705,6 +872,46 @@
           }
         ]
       ]
+    },
+    "Get a row2": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Send a text message5",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row2": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": false,
@@ -715,7 +922,7 @@
     "callerPolicy": "workflowsFromSameOwner",
     "availableInMCP": false
   },
-  "versionId": "715750db-a342-493d-acbe-5540ab1538d6",
+  "versionId": "1991a889-d3e8-4622-b063-3c04a8b31b42",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "27b6f3e0a912bfe7d60f63c591a6a8bf58cf024f0994c7c776708571103ca406"
